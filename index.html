@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Дежурство в классе A-2 | 02.10.2026 – 31.12.2026</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-badge">A-2</div>
+        <div>
+          <h1 class="header-title">Журнал дежурств — Класс A-2</h1>
+          <p class="header-subtitle">
+            Период: <strong>02.10.2026 — 31.12.2026</strong> (без выходных &bull; 65 учебных дней &bull; 21 ученик)
+          </p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="themeToggleBtn" class="btn btn-outline" title="Переключить тему оформления">
+          <span class="btn-icon">🌓</span> <span class="btn-text">Тема</span>
+        </button>
+        <button id="manualSaveBtn" class="btn btn-primary" title="Сохранить данные">
+          <span class="btn-icon">💾</span> <span class="btn-text">Сохранить</span>
+        </button>
+        <button id="clearAllMarksBtn" class="btn btn-outline" title="Сбросить все отметки в таблице">
+          <span class="btn-icon">↺</span> <span class="btn-text">Очистить отметки</span>
+        </button>
+        <div class="dropdown">
+          <button class="btn btn-outline" id="exportMenuBtn" title="Экспорт и резервное копирование">
+            <span class="btn-icon">📥</span> <span class="btn-text">Экспорт / Данные</span>
+          </button>
+          <div class="dropdown-menu" id="exportDropdown">
+            <button class="dropdown-item" id="printBtn">
+              <span>🖨️ Печать / PDF ведомость</span>
+            </button>
+            <button class="dropdown-item" id="exportCsvBtn">
+              <span>📊 Скачать Excel / CSV</span>
+            </button>
+            <button class="dropdown-item" id="backupJsonBtn">
+              <span>💾 Сохранить резервную копию (JSON)</span>
+            </button>
+            <label class="dropdown-item file-label">
+              <span>📂 Загрузить из JSON</span>
+              <input type="file" id="importJsonInput" accept=".json" style="display:none;">
+            </label>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item danger" id="resetDataBtn">
+              <span>🗑️ Сбросить всё</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stats Bar -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon bg-blue">👥</div>
+        <div class="stat-details">
+          <span class="stat-label">Учеников в классе</span>
+          <span class="stat-value" id="statStudentsCount">21</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon bg-purple">📅</div>
+        <div class="stat-details">
+          <span class="stat-label">Учебных дней</span>
+          <span class="stat-value" id="statDaysCount">65</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon bg-green">✅</div>
+        <div class="stat-details">
+          <span class="stat-label">Дежурили</span>
+          <span class="stat-value" id="statCompletedCount">0</span>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon bg-red">❌</div>
+        <div class="stat-details">
+          <span class="stat-label">Пропусков</span>
+          <span class="stat-value" id="statMissedCount">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Navigation / View Tabs & Filter -->
+    <div class="controls-toolbar">
+      <div class="view-tabs">
+        <button class="tab-btn active" data-tab="table-view">
+          <span class="tab-icon">📋</span> Сводная таблица
+        </button>
+        <button class="tab-btn" data-tab="day-view">
+          <span class="tab-icon">📅</span> Дежурные по дням
+        </button>
+        <button class="tab-btn" data-tab="stats-view">
+          <span class="tab-icon">📊</span> Рейтинг и статистика
+        </button>
+      </div>
+
+      <!-- Quick Legend -->
+      <div class="legend-bar">
+        <div class="legend-item" title="Дежурство выполнено">
+          <span class="status-badge status-done">✓</span> <span>Дежурил</span>
+        </div>
+        <div class="legend-item" title="Пропуск дежурства">
+          <span class="status-badge status-missed">✗</span> <span>Не дежурил</span>
+        </div>
+        <div class="legend-item" title="Уважительная причина">
+          <span class="status-badge status-excused">—</span> <span>Уважительная причина</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT VIEWS -->
+    <main class="main-content">
+      <!-- 1. TABLE VIEW -->
+      <div class="tab-panel active" id="table-view">
+        <div class="filter-bar">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="studentSearchInput" placeholder="Поиск ученика по фамилии или имени..." autocomplete="off">
+            <button id="clearSearchBtn" class="clear-btn" style="display:none;">✕</button>
+          </div>
+
+          <div class="month-filters">
+            <button class="pill-btn highlight-today" id="jumpToTodayBtn" title="Перейти к сегодняшней дате в таблице">
+              📍 Сегодня
+            </button>
+            <button class="pill-btn active" data-month="all">Все даты (65)</button>
+            <button class="pill-btn" data-month="10">Октябрь 2026 (21)</button>
+            <button class="pill-btn" data-month="11">Ноябрь 2026 (21)</button>
+            <button class="pill-btn" data-month="12">Декабрь 2026 (23)</button>
+          </div>
+
+          <div class="quick-tip">
+            💡 Клик по ячейке: ✓ (Дежурил) &rarr; ✗ (Не дежурил) &rarr; — (Уважительная) &rarr; Пусто
+          </div>
+        </div>
+
+        <div class="table-container-card">
+          <div class="table-scroll-wrapper" id="tableScrollWrapper">
+            <table class="duty-table" id="dutyTable">
+              <thead id="dutyTableHead">
+                <!-- Built dynamically in JS -->
+              </thead>
+              <tbody id="dutyTableBody">
+                <!-- Built dynamically in JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. DAY VIEW (ДНЕВНОЙ РЕЖИМ) -->
+      <div class="tab-panel" id="day-view">
+        <div class="day-view-container">
+          <div class="day-selector-card">
+            <div class="day-nav-header">
+              <button class="btn btn-outline" id="prevDayBtn">‹ Предыдущий день</button>
+              <div class="day-current-display">
+                <input type="date" id="dayViewDatePicker" min="2026-10-02" max="2026-12-31">
+                <h2 id="dayViewFormattedDate">2 октября 2026, Пятница</h2>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; justify-content: center;">
+                  <span class="day-status-pill" id="daySummaryPill">Отметок на сегодня: 0</span>
+                  <button class="btn btn-outline" id="dayViewTodayBtn" style="padding: 0.2rem 0.6rem; font-size: 0.75rem;" title="Перейти на сегодняшнюю дату">📍 Сегодня</button>
+                </div>
+              </div>
+              <button class="btn btn-outline" id="nextDayBtn">Следующий день ›</button>
+            </div>
+
+            <div class="day-actions-row">
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button class="btn btn-success" id="markAllDoneTodayBtn">
+                  ✓ Отметить как «Дежурили»
+                </button>
+                <button class="btn btn-outline" id="unmarkAllTodayBtn" title="Снять галочки с дежурных на этот день">
+                  ↺ Снять галочки на сегодня
+                </button>
+              </div>
+              <div class="add-duty-picker">
+                <select id="addStudentToDaySelect" class="form-select">
+                  <option value="">+ Назначить ученика на этот день...</option>
+                </select>
+                <button class="btn btn-primary" id="addStudentToDayBtn">Добавить</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Day Duty List -->
+          <div class="day-duties-wrapper">
+            <h3>Дежурные на выбранную дату:</h3>
+            <div id="dayDutyCardsList" class="day-duty-cards">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <!-- Full Class Quick Roster for Current Day -->
+          <div class="day-roster-box">
+            <div class="roster-header">
+              <h4>Все ученики класса на эту дату:</h4>
+              <span class="text-muted">Можно быстро отметить любого ученика или изменить его статус</span>
+            </div>
+            <div class="roster-grid" id="dayFullRosterGrid">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. STATS & RANKING VIEW -->
+      <div class="tab-panel" id="stats-view">
+        <div class="stats-view-card">
+          <div class="stats-view-header">
+            <div>
+              <h2>Сводный рейтинг и статистика дежурств по ученикам</h2>
+              <p class="text-muted">Анализ активности, явок и пропусков за период с 02.10.2026 по 31.12.2026</p>
+            </div>
+            <button class="btn btn-outline" id="printStatsBtn">🖨️ Печать рейтинга</button>
+          </div>
+
+          <div class="table-scroll-wrapper">
+            <table class="stats-table" id="studentsStatsTable">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">№</th>
+                  <th>Ученик (Класс A-2)</th>
+                  <th style="width: 130px;" class="text-center">Дежурил (✓)</th>
+                  <th style="width: 130px;" class="text-center">Пропустил (✗)</th>
+                  <th style="width: 140px;" class="text-center">Уважительная (—)</th>
+                  <th style="width: 180px;">Исполнительность</th>
+                  <th style="width: 160px;">Последнее дежурство</th>
+                </tr>
+              </thead>
+              <tbody id="studentsStatsTbody">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <span>Классный журнал дежурств &bull; Класс A-2</span>
+      <span class="save-status" id="saveIndicator">
+        <span class="save-dot"></span> Данные сохранены локально
+      </span>
+      <span>2026 &copy; График дежурств</span>
+    </footer>
+  </div>
+
+  <!-- MODAL: AUTO ASSIGNMENT -->
+  <div class="modal-backdrop" id="autoAssignModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>⚡ Автоматическое распределение дежурных</h3>
+        <button class="modal-close" id="closeAutoAssignModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-description">
+          Система автоматически распределит всех 21 ученика класса A-2 по очереди по учебным дням (без выходных) в периоде с 02.10.2026 по 31.12.2026 (всего 65 дней).
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="autoAssignCountSelect">Количество дежурных на каждый день:</label>
+          <select id="autoAssignCountSelect" class="form-select">
+            <option value="2" selected>2 дежурных в день (Рекомендуется — пара)</option>
+            <option value="1">1 дежурный в день</option>
+            <option value="3">3 дежурных в день</option>
+          </select>
+          <small class="form-hint">При 2 дежурных каждый ученик отдежурит по 6-7 раз за весь период.</small>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="autoAssignOrderSelect">Порядок распределения:</label>
+          <select id="autoAssignOrderSelect" class="form-select">
+            <option value="sequential" selected>По списку / алфавиту (по очереди)</option>
+            <option value="random">Случайный порядок (равномерная жеребьевка)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="autoAssignScopeSelect">Область применения:</label>
+          <select id="autoAssignScopeSelect" class="form-select">
+            <option value="all">Заполнить весь период с 02.10.2026 по 31.12.2026</option>
+            <option value="emptyOnly">Назначить только на дни, где ещё нет дежурных</option>
+            <option value="futureOnly">Назначить начиная с выбранной даты</option>
+          </select>
+        </div>
+
+        <div class="alert-box">
+          ⚠️ <strong>Внимание:</strong> Если выбрать перезапись всего периода, уже проставленные явки могут быть обновлены новыми назначениями. Рекомендуется сначала сохранить резервную копию.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancelAutoAssignBtn">Отмена</button>
+        <button class="btn btn-primary" id="confirmAutoAssignBtn">Сгенерировать график</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CELL STATUS & NOTE PICKER -->
+  <div class="modal-backdrop" id="cellActionModal">
+    <div class="modal-card modal-sm">
+      <div class="modal-header">
+        <h3 id="cellModalTitle">Отметка дежурства</h3>
+        <button class="modal-close" id="closeCellModalBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="cell-modal-info" id="cellModalInfo">
+          <!-- Student name & date -->
+        </div>
+
+        <div class="status-options-grid">
+          <button class="status-option-btn" data-status="done">
+            <span class="status-badge status-done">✓</span>
+            <div class="status-opt-text">
+              <strong>Дежурил</strong>
+              <small>Обязанности выполнены</small>
+            </div>
+          </button>
+          <button class="status-option-btn" data-status="missed">
+            <span class="status-badge status-missed">✗</span>
+            <div class="status-opt-text">
+              <strong>Не дежурил</strong>
+              <small>Прогул / не явился</small>
+            </div>
+          </button>
+          <button class="status-option-btn" data-status="excused">
+            <span class="status-badge status-excused">—</span>
+            <div class="status-opt-text">
+              <strong>Уважительная причина</strong>
+              <small>Болел, справка</small>
+            </div>
+          </button>
+          <button class="status-option-btn" data-status="none">
+            <span class="status-badge status-none">✕</span>
+            <div class="status-opt-text">
+              <strong>Снять отметку</strong>
+              <small>Очистить ячейку (пусто)</small>
+            </div>
+          </button>
+        </div>
+
+        <div class="form-group mt-3">
+          <label class="form-label" for="cellNoteInput">Заметка / Комментарий (необязательно):</label>
+          <input type="text" id="cellNoteInput" class="form-input" placeholder="Например: мыл доску, замена, замечание...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="cancelCellModalBtn">Закрыть</button>
+        <button class="btn btn-primary" id="saveCellModalBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
